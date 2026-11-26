@@ -1075,4 +1075,51 @@ describe("FinalForm.subscribing", () => {
     expect(foo.mock.calls[3][0].touched).toBe(false);
     expect(foo.mock.calls[3][0].visited).toBe(false);
   });
+
+  it.each(["resetFieldState", "restart"])(
+    "should clear form active when %s resets the focused field",
+    (operation) => {
+      const form = createForm({ onSubmit: onSubmitMock });
+      const subscriber = jest.fn();
+      const fieldSubscriber = jest.fn();
+      form.subscribe(subscriber, { active: true });
+      form.registerField("foo", fieldSubscriber, { active: true });
+      form.focus("foo");
+      subscriber.mockClear();
+      fieldSubscriber.mockClear();
+
+      if (operation === "restart") {
+        form.restart();
+      } else {
+        form.resetFieldState("foo");
+      }
+
+      expect(form.getState().active).toBeUndefined();
+      expect(form.getFieldState("foo").active).toBe(false);
+      expect(subscriber).toHaveBeenCalledTimes(1);
+      expect(subscriber.mock.calls[0][0].active).toBeUndefined();
+      expect(fieldSubscriber).toHaveBeenCalledTimes(1);
+      expect(fieldSubscriber.mock.calls[0][0].active).toBe(false);
+
+      form.focus("foo");
+      expect(form.getState().active).toBe("foo");
+      expect(subscriber).toHaveBeenCalledTimes(2);
+    },
+  );
+
+  it("should preserve form active when resetting a different field", () => {
+    const form = createForm({ onSubmit: onSubmitMock });
+    const subscriber = jest.fn();
+    form.registerField("foo", jest.fn(), { active: true });
+    form.registerField("bar", jest.fn(), { active: true });
+    form.subscribe(subscriber, { active: true });
+    form.focus("foo");
+    subscriber.mockClear();
+
+    form.resetFieldState("bar");
+
+    expect(form.getState().active).toBe("foo");
+    expect(form.getFieldState("foo").active).toBe(true);
+    expect(subscriber).not.toHaveBeenCalled();
+  });
 });

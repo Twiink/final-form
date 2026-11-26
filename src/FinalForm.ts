@@ -1118,6 +1118,9 @@ function createForm<
      * Resets all field flags (e.g. touched, visited, etc.) to their initial state
      */
     resetFieldState: (name: keyof FormValues) => {
+      if (state.formState.active === name) {
+        delete state.formState.active;
+      }
       const field = state.fields[name as string];
       state.fields[name as string] = {
         ...field,
@@ -1148,6 +1151,7 @@ function createForm<
      */
     restart: (initialValues = state.formState.initialValues) => {
       api.batch(() => {
+        delete state.formState.active;
         for (const name in state.fields) {
           const field = state.fields[name];
           state.fields[name] = {
